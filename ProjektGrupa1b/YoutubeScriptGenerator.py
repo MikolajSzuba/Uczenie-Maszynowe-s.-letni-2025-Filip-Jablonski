@@ -7,9 +7,6 @@ from kivy.uix.spinner import Spinner
 from kivy.uix.scrollview import ScrollView
 from kivy.uix.gridlayout import GridLayout
 
-api_key = "AIzaSyDmRxmLOnO4YO6VxwcNs2IhalVYZ6pB7gw"
-
-
 class YouTubeScriptGeneratorApp(App):
     def build(self):
         self.root = BoxLayout(orientation='vertical', padding=10, spacing=10)
