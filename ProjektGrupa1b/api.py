@@ -23,16 +23,8 @@ def send_prompt(api_key, prompt):
     """
     client = genai.Client(api_key=api_key)
 
-    response = client.models.generate_content(
+    return client.models.generate_content(
         model="gemini-2.0-flash",
         contents=prompt,
     )
-    return response
 
-
-if __name__ == '__main__':
-    api_key = read_credentials('credentials.txt')
-    prompt = "Generate a script for short video about cats"
-
-    response = send_prompt(api_key, prompt)
-    print(response.text)
