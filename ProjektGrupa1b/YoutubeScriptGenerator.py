@@ -7,12 +7,39 @@ from kivy.uix.spinner import Spinner
 from kivy.uix.scrollview import ScrollView
 from kivy.uix.gridlayout import GridLayout
 from kivy.uix.checkbox import CheckBox
-from kivy.uix.progressbar import ProgressBar
 from kivy.uix.modalview import ModalView
 from kivy.uix.slider import Slider
 from kivy.clock import Clock
+from kivy.uix.image import Image
+from kivy.uix.popup import Popup
+from kivy.uix.floatlayout import FloatLayout
 import re
-from api import send_prompt, read_credentials
+import api
+
+
+class ApiSettingsPopup(Popup):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.title = "API Settings"
+        self.size_hint = (None, None)
+        self.size = (400, 200)
+        layout = BoxLayout(orientation="vertical", spacing=10, padding=10)
+        self.text_input = TextInput(hint_text="API key")
+        confirm_button = Button(text="Save API Key", size_hint=(1, 0.3))
+        confirm_button.bind(on_press=self.dismiss)
+        confirm_button.bind(on_press=self.save_api_key)
+
+        layout.add_widget(self.text_input)
+        layout.add_widget(confirm_button)
+
+        self.content = layout
+
+    def save_api_key(self, instance):
+        api_key = self.text_input.text.strip()
+        if api_key:
+            api.save_api_key_to_file(api_key)
+        self.dismiss()
+
 
 def save_script_to_file(script, filename="youtube_script.txt"):
     try:
@@ -28,15 +55,14 @@ def format_script(text):
     for line in lines:
         line = line.strip()
         line = line.replace('*', '')  # Usuwa pojedyncze gwiazdki
+        if re.match(r'^##+\s*(.*)', line):
+            header_text = re.sub(r'^##+\s*', '', line)  # Nagłówki ##
 
-        if re.match(r'^##+\s*(.*)', line):  # Nagłówki ##
-            header_text = re.sub(r'^##+\s*', '', line)
             formatted_text += f"\n[b]{header_text}[/b]\n"
         elif line.startswith("(") and line.endswith(")"):  # Kursywa dla wskazówek wizualnych
             formatted_text += f"\n[i]{line}[/i]\n"
         else:
             formatted_text += f"{line}\n"
-
     return formatted_text
 
 def remove_formatting(text):
@@ -46,11 +72,24 @@ def remove_formatting(text):
 
 class YouTubeScriptGeneratorApp(App):
     def build(self):
-        self.root = BoxLayout(orientation='vertical', padding=15, spacing=10)
+        self.root = BoxLayout(orientation='vertical', padding=15, spacing=15)
         title_label = Label(text="[b][size=30]ScriptGenerator[/size][/b]", markup=True)
         self.root.add_widget(title_label)
 
-        layout_input = GridLayout(cols=2, size_hint_y=None, height=450, spacing=10)
+        layout_input = GridLayout(cols=2, size_hint_y=None, height=500, spacing=10)
+        label_size = {'size_hint_x': None, 'width': 200, 'text_size': (200, 70)}
+
+        # Settings
+        menu_layout = BoxLayout(size_hint_y=None, height=50, padding=10)
+        self.menu = Spinner(
+            text="Settings",
+            values=["Set API Key"],
+            size_hint=(None, None),
+            size=(150, 40)
+        )
+        self.menu.bind(text=self.menu_selected)
+        menu_layout.add_widget(self.menu)
+        layout_input.add_widget(menu_layout)
 
         label_size = {'size_hint_x': None, 'size_hint_y': 100, 'width': 200, 'height': 200, 'text_size': (200, 70)}
         label_size_2 = {'size_hint_x': None, 'size_hint_y': 100, 'width': 200, 'height': 200, 'text_size': (200, 0)}
@@ -60,12 +99,11 @@ class YouTubeScriptGeneratorApp(App):
         layout_input.add_widget(self.topic_input)
 
         layout_input.add_widget(Label(text="Genre:", font_size=18, **label_size))
-        self.genre_spinner = Spinner(text="Educational",
-                                     values=("Educational", "Humorous", "Dramatic", "Motivational", "Vlog", "Tutorial"),
-                                     size_hint_y=None, height=40)
+        self.genre_spinner = Spinner(text="Educational", values=("Educational", "Humorous", "Dramatic", "Motivational", "Vlog", "Tutorial"), size_hint_y=None, height=40)
         layout_input.add_widget(self.genre_spinner)
 
-        layout_input.add_widget(Label(text="Video Length (min):", font_size=18, **label_size_2))
+        layout_input.add_widget(Label(text="Video Length (min):", font_size=18, **label_size))
+
         length_layout = BoxLayout(orientation='horizontal', spacing=10)
         self.length_slider = Slider(min=1, max=30, value=10, step=1)
         self.length_label = Label(text="10 min", size_hint_x=None, width=60, font_size=18)
@@ -75,17 +113,16 @@ class YouTubeScriptGeneratorApp(App):
         self.length_slider.bind(value=self.update_length_label)
 
         layout_input.add_widget(Label(text="Tone:", font_size=18, **label_size))
-        self.tone_spinner = Spinner(text="Formal", values=("Formal", "Informal", "Serious", "Funny", "Casual"),
-                                    size_hint_y=None, height=40)
+        self.tone_spinner = Spinner(text="Formal", values=("Formal", "Informal", "Serious", "Funny", "Casual"), size_hint_y=None, height=40)
         layout_input.add_widget(self.tone_spinner)
 
-        layout_input.add_widget(Label(text="Target Audience:", font_size=18, **label_size))
-        self.target_spinner = Spinner(text="General", values=("General", "Teens", "Adults", "Kids", "Seniors"),
-                                      size_hint_y=None, height=40)
+        layout_input.add_widget(Label(text="Target Audience:\n", font_size=18, **label_size))
+        self.target_spinner = Spinner(text="General", values=("General", "Teens", "Adults", "Kids", "Seniors"), size_hint_y=None, height=40)
         layout_input.add_widget(self.target_spinner)
 
         self.editing_tips_checkbox = CheckBox()
-        layout_input.add_widget(Label(text="Include Editing Tips", font_size=18, **label_size_2))
+        layout_input.add_widget(Label(text="Include Editing Tips\n", font_size=18, **label_size))
+
         layout_input.add_widget(self.editing_tips_checkbox)
 
         self.generate_button = Button(text="Generate Script", size_hint_y=None, height=50)
@@ -95,33 +132,42 @@ class YouTubeScriptGeneratorApp(App):
 
         return self.root
 
+    def menu_selected(self, spinner, text):
+        if text == "Set API Key":
+            popup = ApiSettingsPopup()
+            popup.open()
+            spinner.text = "Settings"
 
     def update_length_label(self, instance, value):
         self.length_label.text = f"{int(value)} min"
 
     def generate_script(self, instance):
+        api_key = api.read_credentials("credentials.txt")
+
+        # Validate the API key length.
+        if len(api_key) != 39:
+            self.show_popup("Error", "API key must be exactly 39 characters long.")
+            return
+
         topic = self.topic_input.text.strip()
         if not topic:
             self.show_popup("Error", "Please enter a topic.")
             return
+
         self.generate_button.text = "Generating..."
         self.generate_button.disabled = True
+        Clock.schedule_once(lambda dt: self.process_script_generation(api_key, topic), 1)
 
-        Clock.schedule_once(lambda dt: self.process_script_generation(topic), 1)
-
-    def process_script_generation(self, topic):
+    def process_script_generation(self, api_key, topic):
         prompt = f"Generate a {self.genre_spinner.text.lower()} YouTube video script about {topic}. "
         prompt += f"The video should be {int(self.length_slider.value)} minutes long, with a {self.tone_spinner.text.lower()} tone. "
         prompt += f"The target audience is {self.target_spinner.text.lower()}. "
         if self.editing_tips_checkbox.active:
             prompt += "Include video editing tips."
 
-        api_key = read_credentials('credentials.txt')
-
         try:
-            script = send_prompt(api_key, prompt)
-            script = script.text
-            formatted_script = format_script(script)
+            script = api.send_prompt(api_key, prompt)
+            formatted_script = format_script(script.text)
             self.show_popup("Generated Script", formatted_script, save_button=True)
         except Exception as e:
             self.show_popup("Error", f"Error generating script: {str(e)}")
@@ -150,8 +196,13 @@ class YouTubeScriptGeneratorApp(App):
         popup.open()
 
     def handle_save(self, message):
-        success = save_script_to_file(remove_formatting(message))
-        self.show_popup("File Save Status", "[color=00FF00]File saved successfully![/color]" if success else "[color=FF0000]Failed to save file.[/color]")
+        # Remove formatting before saving.
+        plain_text = remove_formatting(message)
+        if save_script_to_file(plain_text):
+            self.show_popup("Success", "[color=00FF00]Script saved successfully!")
+        else:
+            self.show_popup("Error", "Failed to save the script.")
+
 
 if __name__ == '__main__':
     YouTubeScriptGeneratorApp().run()
