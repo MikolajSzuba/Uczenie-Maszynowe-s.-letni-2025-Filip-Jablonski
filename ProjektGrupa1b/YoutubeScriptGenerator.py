@@ -40,6 +40,7 @@ class ApiSettingsPopup(Popup):
             api.save_api_key_to_file(api_key)
         self.dismiss()
 
+
 def save_script_to_file(script, filename="youtube_script.txt"):
     try:
         with open(filename, "w", encoding="utf-8") as file:
@@ -56,6 +57,7 @@ def format_script(text):
         line = line.replace('*', '')  # Usuwa pojedyncze gwiazdki
         if re.match(r'^##+\s*(.*)', line):
             header_text = re.sub(r'^##+\s*', '', line)  # Nagłówki ##
+
             formatted_text += f"\n[b]{header_text}[/b]\n"
         elif line.startswith("(") and line.endswith(")"):  # Kursywa dla wskazówek wizualnych
             formatted_text += f"\n[i]{line}[/i]\n"
@@ -89,6 +91,9 @@ class YouTubeScriptGeneratorApp(App):
         menu_layout.add_widget(self.menu)
         layout_input.add_widget(menu_layout)
 
+        label_size = {'size_hint_x': None, 'size_hint_y': 100, 'width': 200, 'height': 200, 'text_size': (200, 70)}
+        label_size_2 = {'size_hint_x': None, 'size_hint_y': 100, 'width': 200, 'height': 200, 'text_size': (200, 0)}
+
         layout_input.add_widget(Label(text="Video Topic:", font_size=18, **label_size))
         self.topic_input = TextInput(hint_text="Enter topic", size_hint_y=None, height=40)
         layout_input.add_widget(self.topic_input)
@@ -98,6 +103,7 @@ class YouTubeScriptGeneratorApp(App):
         layout_input.add_widget(self.genre_spinner)
 
         layout_input.add_widget(Label(text="Video Length (min):", font_size=18, **label_size))
+
         length_layout = BoxLayout(orientation='horizontal', spacing=10)
         self.length_slider = Slider(min=1, max=30, value=10, step=1)
         self.length_label = Label(text="10 min", size_hint_x=None, width=60, font_size=18)
@@ -116,6 +122,7 @@ class YouTubeScriptGeneratorApp(App):
 
         self.editing_tips_checkbox = CheckBox()
         layout_input.add_widget(Label(text="Include Editing Tips\n", font_size=18, **label_size))
+
         layout_input.add_widget(self.editing_tips_checkbox)
 
         self.generate_button = Button(text="Generate Script", size_hint_y=None, height=50)
@@ -195,6 +202,7 @@ class YouTubeScriptGeneratorApp(App):
             self.show_popup("Success", "[color=00FF00]Script saved successfully!")
         else:
             self.show_popup("Error", "Failed to save the script.")
+
 
 if __name__ == '__main__':
     YouTubeScriptGeneratorApp().run()

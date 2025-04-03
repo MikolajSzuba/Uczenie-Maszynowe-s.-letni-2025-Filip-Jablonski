@@ -56,3 +56,4 @@ def send_prompt(api_key, prompt):
         model="gemini-2.0-flash",
         contents=prompt,
     )
+
