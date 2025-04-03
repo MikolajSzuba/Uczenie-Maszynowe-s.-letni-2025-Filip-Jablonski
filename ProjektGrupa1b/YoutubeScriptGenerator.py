@@ -76,8 +76,6 @@ class YouTubeScriptGeneratorApp(App):
         title_label = Label(text="[b][size=30]ScriptGenerator[/size][/b]", markup=True)
         self.root.add_widget(title_label)
 
-        layout_input = GridLayout(cols=2, size_hint_y=None, height=500, spacing=10)
-        label_size = {'size_hint_x': None, 'width': 200, 'text_size': (200, 70)}
 
         # Settings
         menu_layout = BoxLayout(size_hint_y=None, height=50, padding=10)
@@ -89,10 +87,9 @@ class YouTubeScriptGeneratorApp(App):
         )
         self.menu.bind(text=self.menu_selected)
         menu_layout.add_widget(self.menu)
-        layout_input.add_widget(menu_layout)
-
-        label_size = {'size_hint_x': None, 'size_hint_y': 100, 'width': 200, 'height': 200, 'text_size': (200, 70)}
-        label_size_2 = {'size_hint_x': None, 'size_hint_y': 100, 'width': 200, 'height': 200, 'text_size': (200, 0)}
+        self.root.add_widget(menu_layout)
+        layout_input = GridLayout(cols=2, size_hint_y=None, height=500, spacing=10)
+        label_size = {'size_hint_x': None, 'width': 200, 'text_size': (200, 70)}
 
         layout_input.add_widget(Label(text="Video Topic:", font_size=18, **label_size))
         self.topic_input = TextInput(hint_text="Enter topic", size_hint_y=None, height=40)
