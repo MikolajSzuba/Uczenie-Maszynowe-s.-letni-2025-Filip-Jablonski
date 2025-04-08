@@ -1,5 +1,5 @@
 
-# ScriptGenerator – Kreator skryptów do filmów YouTube z wykorzystaniem AI
+# Screnario|AI – Kreator skryptów do filmów YouTube z wykorzystaniem AI
 
 ## 1. Struktura projektu
 ```
